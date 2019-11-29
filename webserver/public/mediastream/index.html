@@ -3,6 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <title>WebRTC 捕获 video 和 audio</title>
+
+  <style>
+    .none {
+      -webkit-filter: none;
+    }
+
+    .blur {
+      -webkit-filter: blur(3px);
+    }
+
+    .grayscale {
+      -webkit-filter: grayscale(1);
+    }
+
+    .invert {
+      -webkit-filter: invert(1);
+    }
+
+    .sepia {
+      -webkit-filter: sepia(1);
+    }
+  </style>
 </head>
 <body>
 
@@ -15,6 +37,18 @@
   </div>
   <div>
     <label for="videoSource">视频 input：</label><select id="videoSource"></select>
+  </div>
+
+  <div>
+    <label>Filter：
+      <select id="filter">
+        <option value="none">None none</option>
+        <option value="blur">模糊 blur</option>
+        <option value="grayscale">灰度 grayscale</option>
+        <option value="invert">反转 invert</option>
+        <option value="sepia">褐色 sepia</option>
+      </select>
+    </label>
   </div>
 
   <div>

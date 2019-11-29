@@ -36,6 +36,7 @@ function gotMediaStream(stream) {
 let audioSource = document.querySelector('select#audioSource');
 let audioOutput = document.querySelector('select#audioOutput');
 let videoSource = document.querySelector('select#videoSource');
+let filtersSelect = document.querySelector('select#filter');
 
 function gotDevices(deviceInfos) {
   deviceInfos.forEach(function (deviceInfo) {
@@ -63,8 +64,13 @@ function handelError(err) {
 
 start();
 
-// 触发事件
+// 切换 videoSource 设备触发事件
 videoSource.onchange = function () {
   start();
   alert('切换摄像头!')
+};
+
+// filtersSelect 切换触发事件
+filtersSelect.onchange = function () {
+  videoplay.className = filtersSelect.value;
 };
