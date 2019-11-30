@@ -49,7 +49,7 @@
 
     .com-sel {
       line-height: 5rem;
-      cursor: pointer;        /*鼠标上移变成小手*/
+      cursor: pointer; /*鼠标上移变成小手*/
     }
 
     .com-opt {
@@ -59,9 +59,9 @@
       border: none;
       outline: none;
       /*去掉默认的下拉三角*/
-      appearance:none;
-      -moz-appearance:none;
-      -webkit-appearance:none;
+      appearance: none;
+      -moz-appearance: none;
+      -webkit-appearance: none;
       /*添加下拉三角图标*/
       background: url("https://i.loli.net/2019/11/30/qdfPh6O7HXKTSuZ.png") no-repeat right center transparent;
     }
@@ -100,14 +100,29 @@
 
   <div class="com-sel">
     <label class="label-font-size">视频特效：
-      <select class="com-opt" v-on:change="filterOnChange">
+      <select ref="filterSelector" class="com-opt" v-on:change="filterOnChange">
         <option v-for="i in filter">{{i.text}}</option>
       </select>
     </label>
   </div>
 
   <div>
-    <video autoplay playsinline id="player" ref="player"></video>
+    <table>
+      <tr>
+        <td>
+          <video autoplay playsinline id="player" ref="player"></video>
+        </td>
+        <td>
+          <button v-on:click="getPicture" style="font-size: 25px">
+            截取图片↓
+          </button>
+          <br/>
+          <canvas ref="picture"></canvas>
+
+          <img ref="img">
+        </td>
+      </tr>
+    </table>
   </div>
 </div>
 
@@ -178,7 +193,7 @@
       },
 
       getMediaStream(stream) {
-        console.log(stream);
+        // console.log(stream);
         this.$refs.player.srcObject = stream;
 
         return navigator.mediaDevices.enumerateDevices();
@@ -199,11 +214,30 @@
       },
 
       filterOnChange(event) {
-        for (let i = 0; i < this.filter.length; ++i) {
-          if (event.target.value === this.filter[i].text) {
-            this.$refs.player.className = this.filter[i].value;
-          }
-        }
+        let i = this.$refs.filterSelector.selectedIndex;
+        this.$refs.player.className = this.filter[i].value;
+      },
+
+      // 截图按钮点击事件
+      getPicture() {
+        this.$refs.picture.width = 320;
+        this.$refs.picture.height = 240;
+
+        // 给截图渲染上特效
+        let i = this.$refs.filterSelector.selectedIndex;
+        this.$refs.picture.className = this.filter[i].value;
+
+        this.$refs.picture.getContext('2d')
+            .drawImage(
+                this.$refs.player,
+                0, 0,
+                320, 240
+            );
+
+        // 获取图片的二进制数据，将canvas转变成PNG格式
+        console.log(this.$refs.picture.toDataURL('image/png'));
+        // 根据上面的数据生成 img 图片
+        this.$refs.img.src = this.$refs.picture.toDataURL('image/png')
       },
     }
   });
