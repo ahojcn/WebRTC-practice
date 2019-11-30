@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>显示获取音视频设备</title>
+  <script src="https://cdn.bootcss.com/webrtc-adapter/zv4.1.1/adapter.js"></script>
+  <script src="https://cdn.bootcss.com/vue/2.6.10/vue.min.js"></script>
+
+  <style>
+    .none { /* 无 */
+      -webkit-filter: none;
+    }
+
+    .blur { /* 模糊 */
+      -webkit-filter: blur(3px);
+    }
+
+    .grayscale { /* 灰度 */
+      -webkit-filter: grayscale(1);
+    }
+
+    .invert { /* 反色 */
+      -webkit-filter: invert(1);
+    }
+
+    .sepia { /* 褐色 */
+      -webkit-filter: sepia(1);
+    }
+
+    .opacity { /* 透明度 */
+      -webkit-filter: opacity(1);
+    }
+
+    .brightness { /* 亮度 */
+      -webkit-filter: brightness(3);
+    }
+
+    .contrast { /* 对比度 */
+      -webkit-filter: contrast(3);
+    }
+
+    .saturate { /* 饱和度 */
+      -webkit-filter: saturate(3);
+    }
+
+    .hue-rotate { /* 色相反转 */
+      -webkit-filter: hue-rotate(3.142rad);
+    }
+
+    .com-sel {
+      line-height: 5rem;
+      cursor: pointer;        /*鼠标上移变成小手*/
+    }
+
+    .com-opt {
+      padding-right: 1.8rem;
+      color: #afbac0;
+      font-size: 1.6rem;
+      border: none;
+      outline: none;
+      /*去掉默认的下拉三角*/
+      appearance:none;
+      -moz-appearance:none;
+      -webkit-appearance:none;
+      /*添加下拉三角图标*/
+      background: url("https://i.loli.net/2019/11/30/qdfPh6O7HXKTSuZ.png") no-repeat right center transparent;
+    }
+
+    .label-font-size {
+      font-size: 25px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="app">
+  <div class="com-sel">
+    <label class="label-font-size">音频输入：
+      <select class="com-opt">
+        <option v-for="i in audio_input">{{i.label}}</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="com-sel">
+    <label class="label-font-size">音频输出：
+      <select class="com-opt">
+        <option v-for="i in audio_output">{{i.label}}</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="com-sel">
+    <label class="label-font-size">视频输入：
+      <select class="com-opt" v-on:change="videoInputOnChange">
+        <option v-for="i in video_input">{{i.label}}</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="com-sel">
+    <label class="label-font-size">视频特效：
+      <select class="com-opt" v-on:change="filterOnChange">
+        <option v-for="i in filter">{{i.text}}</option>
+      </select>
+    </label>
+  </div>
+
+  <div>
+    <video autoplay playsinline id="player" ref="player"></video>
+  </div>
+</div>
+
+<script>
+  var app = new Vue({
+    el: '#app',
+    data: {
+      audio_input: [],
+      audio_output: [],
+      video_input: [],
+      filter: [
+        {value: 'none', text: '无'},
+        {value: 'blur', text: '模糊'},
+        {value: 'grayscale', text: '灰度'},
+        {value: 'invert', text: '反色'},
+        {value: 'sepia', text: '褐色'},
+        {value: 'opacity', text: '透明度'},
+        {value: 'brightness', text: '亮度'},
+        {value: 'contrast', text: '对比度'},
+        {value: 'saturate', text: '饱和度'},
+        {value: 'hue-rotate', text: '色相反转'},
+      ],
+      constants: {
+        video: {
+          deviceId: undefined  // 使用默认视频输入
+        },
+        audio: true
+      },
+    },
+    created() {
+      this.start();
+    },
+    methods: {
+      start() {
+        if (!navigator.mediaDevices
+            || !navigator.mediaDevices.enumerateDevices) {
+          alert('不支持');
+        } else {
+          navigator.mediaDevices.getUserMedia(this.constants)
+              .then(this.getMediaStream)
+              .then(this.getDevices)
+              .catch(this.handleErr)
+        }
+      },
+
+      getDevices(devicesInfo) {
+        this.video_input = [];
+        this.audio_input = [];
+        this.audio_output = [];
+        devicesInfo.forEach((deviceInfo) => {
+          if (deviceInfo.kind === 'audioinput') {
+            this.audio_input.push({
+              label: deviceInfo.label,
+              deviceId: deviceInfo.deviceId
+            })
+          } else if (deviceInfo.kind === 'audiooutput') {
+            this.audio_output.push({
+              label: deviceInfo.label,
+              deviceId: deviceInfo.deviceId
+            })
+          } else if (deviceInfo.kind === 'videoinput') {
+            this.video_input.push({
+              label: deviceInfo.label,
+              deviceId: deviceInfo.deviceId
+            })
+          }
+        });
+      },
+
+      getMediaStream(stream) {
+        console.log(stream);
+        this.$refs.player.srcObject = stream;
+
+        return navigator.mediaDevices.enumerateDevices();
+      },
+
+      handleErr(errInfo) {
+        alert(errInfo);
+      },
+
+      videoInputOnChange(arg) {
+        for (let i = 0; i < this.video_input.length; ++i) {
+          if (arg.target.value === this.video_input[i].label) {
+            this.constants.video.deviceId = this.video_input[i].deviceId;
+            this.start();
+            break;
+          }
+        }
+      },
+
+      filterOnChange(event) {
+        for (let i = 0; i < this.filter.length; ++i) {
+          if (event.target.value === this.filter[i].text) {
+            this.$refs.player.className = this.filter[i].value;
+          }
+        }
+      },
+    }
+  });
+</script>
+
+</body>
+</html>
