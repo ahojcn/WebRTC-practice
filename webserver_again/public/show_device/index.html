@@ -110,16 +110,18 @@
     <table>
       <tr>
         <td>
-          <video autoplay playsinline id="player" ref="player"></video>
-        </td>
-        <td>
           <button v-on:click="getPicture" style="font-size: 25px">
             截取图片↓
           </button>
           <br/>
           <canvas ref="picture"></canvas>
-
           <img ref="img">
+        </td>
+        <td>
+          <video autoplay playsinline id="player" ref="player"></video>
+        </td>
+        <td>
+          <div ref="constraints"></div>
         </td>
       </tr>
     </table>
@@ -147,7 +149,9 @@
       ],
       constants: {
         video: {
-          deviceId: undefined  // 使用默认视频输入
+          deviceId: undefined,  // 使用默认视频输入
+          width: 320,
+          height: 240
         },
         audio: true
       },
@@ -195,6 +199,9 @@
       getMediaStream(stream) {
         // console.log(stream);
         this.$refs.player.srcObject = stream;
+
+        let videoConstraints = stream.getVideoTracks()[0].getSettings();
+        this.$refs.constraints.textContent = JSON.stringify(videoConstraints, null, 2);
 
         return navigator.mediaDevices.enumerateDevices();
       },
