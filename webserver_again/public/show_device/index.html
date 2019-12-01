@@ -306,7 +306,9 @@
       // 播放 btn 点击事件
       onBtnPlayRecord() {
         let blob = new Blob(this.buffer, {type: 'video/webm'});
+        let i = this.$refs.filterSelector.selectedIndex;
         let record_player = this.$refs.record_player;
+        record_player.className = this.filter[i].value;
         record_player.src = window.URL.createObjectURL(blob);
         record_player.srcObject = null;
         record_player.controls = true;
