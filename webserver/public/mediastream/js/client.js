@@ -15,12 +15,22 @@ picture.height = 240;
 // 获取音频
 // let audioplay = document.querySelector('audio#audioplayer');
 
+// 录制视频控制 button
+let recvideo = document.querySelector('video#recplayer');
+let btnRecord = document.querySelector('button#record');
+let btnPlay = document.querySelector('button#recplay');
+let btnDownload = document.querySelector('button#download');
+
+var buffer;
+var mediaRecorder;
+
 
 // 获取视频约束
 let divConstraints = document.querySelector('div#constraints');
 
 function start() {
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+  // if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
     console.log('不支持');
   } else {
     let deviceId = videoSource.value;
@@ -38,7 +48,11 @@ function start() {
         noiseSuppression: true,
       },
     };
-    navigator.mediaDevices.getUserMedia(constrants)
+    // navigator.mediaDevices.getUserMedia(constrants)
+    //     .then(gotMediaStream)
+    //     .then(gotDevices)  // 这里是获取权限成功后执行获取设备
+    //     .catch(handelError);
+    navigator.mediaDevices.getDisplayMedia(constrants)
         .then(gotMediaStream)
         .then(gotDevices)  // 这里是获取权限成功后执行获取设备
         .catch(handelError);
@@ -52,6 +66,8 @@ function gotMediaStream(stream) {
   let videoConstraints = videoTrack.getSettings();
   divConstraints.textContent = JSON.stringify(videoConstraints, null, 2);  // 最后一个 2 表示缩进的空格
 
+  // 视频录制用
+  window.stream = stream;
   // audioplay.srcObject = stream;
 
   return navigator.mediaDevices.enumerateDevices();  // 返回一个 promise
@@ -103,4 +119,68 @@ snapshot.onclick = function () {
       0, 0,  // 起始点
       picture.width, picture.height  // 宽高
   );
+};
+
+
+// 录制
+function startRecord() {
+  buffer = [];
+
+  let options = {
+    mimeType: 'video/webm;codecs=vp8'
+  };
+  if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+    console.error(`${options.mimeType} 不支持`);
+    return;
+  }
+  try {
+    mediaRecorder = new MediaRecorder(window.stream, options);
+  } catch (e) {
+    console.error('创建MediaRecorder失败', e);
+    return;
+  }
+  mediaRecorder.ondataavailable = handleDataAvailable;
+  mediaRecorder.start(10);
+}
+
+function handleDataAvailable(e) {
+  if (e && e.data && e.data.size > 0) {
+    buffer.push(e.data);
+  }
+}
+
+function stopRecord() {
+  mediaRecorder.stop();
+}
+
+btnRecord.onclick = () => {
+  if (btnRecord.textContent === '开始录制') {
+    startRecord();
+    btnRecord.textContent = '结束录制';
+    btnPlay.disabled = true;
+    btnDownload.disabled = true;
+  } else {
+    stopRecord();
+    btnRecord.textContent = '开始录制';
+    btnPlay.disabled = false;
+    btnDownload.disabled = false;
+  }
+};
+
+btnPlay.onclick = () => {
+  let blob = new Blob(buffer, {type: 'video/webm'});
+  recvideo.src = window.URL.createObjectURL(blob);
+  recvideo.srcObject = null;
+  recvideo.controls = true;
+  recvideo.play();
+};
+
+btnDownload.onclick = () => {
+  var blob = new Blob(buffer, {type: 'video/webm'});
+  var url = window.URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.style.display = 'none';
+  a.download = 'aaa.webm';
+  a.click();
 };
