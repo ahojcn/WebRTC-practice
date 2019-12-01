@@ -7,6 +7,10 @@
   <script src="https://cdn.bootcss.com/vue/2.6.10/vue.min.js"></script>
 
   <style>
+    button {
+      font-size: 25px;
+    }
+
     .none { /* 无 */
       -webkit-filter: none;
     }
@@ -110,7 +114,7 @@
     <table>
       <tr>
         <td>
-          <button v-on:click="getPicture" style="font-size: 25px">
+          <button v-on:click="getPicture">
             截取图片↓
           </button>
           <br/>
@@ -118,10 +122,14 @@
           <img ref="img">
         </td>
         <td>
-          <video autoplay playsinline id="player" ref="player"></video>
-        </td>
-        <td>
           <div ref="constraints"></div>
+          <video autoplay playsinline id="player" ref="player"></video>
+          <br>
+          <button ref="start_record" v-on:click="onBtnStartRecord">开始录制</button>
+          <button ref="play_record" v-on:click="onBtnPlayRecord">播放</button>
+          <button ref="download_record" v-on:click="onBtnDownloadRecord">下载</button>
+          <br>
+          <video playsinline ref="record_player"></video>
         </td>
       </tr>
     </table>
@@ -153,8 +161,11 @@
           width: 320,
           height: 240
         },
-        audio: true
+        audio: false
       },
+      buffer: [],
+      mediaRecorder: null,
+      stream: null,
     },
     created() {
       this.start();
@@ -203,6 +214,9 @@
         let videoConstraints = stream.getVideoTracks()[0].getSettings();
         this.$refs.constraints.textContent = JSON.stringify(videoConstraints, null, 2);
 
+        // 视频录制用
+        this.stream = stream;
+
         return navigator.mediaDevices.enumerateDevices();
       },
 
@@ -242,9 +256,71 @@
             );
 
         // 获取图片的二进制数据，将canvas转变成PNG格式
-        console.log(this.$refs.picture.toDataURL('image/png'));
+        // console.log(this.$refs.picture.toDataURL('image/png'));
         // 根据上面的数据生成 img 图片
         this.$refs.img.src = this.$refs.picture.toDataURL('image/png')
+      },
+
+      // 开始录制
+      startRecord() {
+        let options = {mimeType: 'video/webm;codecs=vp8'};
+        try {
+          if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+            alert('不支持的视频格式');
+            return
+          }
+          this.mediaRecorder = new MediaRecorder(this.stream, options);
+        } catch (e) {
+          alert('创建MediaRecoder失败' + e);
+          console.log(e);
+          return;
+        }
+        this.mediaRecorder.ondataavailable = (e) => {
+          if (e && e.data && e.data.size > 0) {
+            this.buffer.push(e.data);
+          }
+        };
+        this.mediaRecorder.start(10);
+      },
+      // 停止录制
+      stopRecord() {
+        this.mediaRecorder.stop();
+      },
+      // 开始录制 btn 点击事件
+      onBtnStartRecord() {
+        let start_btn = this.$refs.start_record;
+        let play_btn = this.$refs.play_record;
+        let download_btn = this.$refs.download_record;
+        if (start_btn.textContent === '开始录制') {
+          this.startRecord();
+          start_btn.textContent = '结束录制';
+          play_btn.disabled = true;
+          download_btn.disabled = true;
+        } else {
+          this.stopRecord();
+          start_btn.textContent = '开始录制';
+          play_btn.disabled = false;
+          download_btn.disabled = false;
+        }
+      },
+      // 播放 btn 点击事件
+      onBtnPlayRecord() {
+        let blob = new Blob(this.buffer, {type: 'video/webm'});
+        let record_player = this.$refs.record_player;
+        record_player.src = window.URL.createObjectURL(blob);
+        record_player.srcObject = null;
+        record_player.controls = true;
+        record_player.play();
+      },
+      // 下载 btn 点击事件
+      onBtnDownloadRecord() {
+        let blob = new Blob(this.buffer, {type: 'video/webm'});
+        let url = window.URL.createObjectURL(blob);
+        let a = document.createElement('a');
+        a.href = url;
+        a.style.display = 'none';
+        a.download = 'aaa.webm';
+        a.click();
       },
     }
   });
