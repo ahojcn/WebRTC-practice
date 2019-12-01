@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>聊天室</title>
+</head>
+<body>
+
+<div>
+  <table align="center">
+    <tr>
+      <td>
+        <label>用户名：<br>
+          <input type="text" id="username"/>
+        </label>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <label>房间：<br>
+          <input type="text" id="room"/>
+          <button id="connect">加入</button>
+        </label>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <label>内容：<br>
+          <textarea disabled id="output" rows="10" cols="50"></textarea>
+        </label>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <label>输入：<br>
+          <textarea disabled id="input" rows="3" cols="50"></textarea>
+        </label>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <label>
+          <button id="send">发送</button>
+        </label>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<script src="https://cdn.bootcss.com/socket.io/2.3.0/socket.io.js"></script>
+<script src="./client.js"></script>
+
+</body>
+</html>
