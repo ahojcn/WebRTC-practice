@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>WebRTC PeerConnection</title>
+  <style>
+    button {
+      font-size: 25px;
+    }
+  </style>
+</head>
+<body>
+
+<div>
+  <video autoplay id="localvideo" playsinline></video>
+  <video autoplay id="remotevideo" playsinline></video>
+
+  <div>
+    <button id="start">start</button>
+    <button id="call">call</button>
+    <button id="hangup">挂断</button>
+  </div>
+</div>
+
+<script src="https://cdn.bootcss.com/webrtc-adapter/zv4.1.1/adapter.min.js"></script>
+<script src="./main.js"></script>
+
+</body>
+</html>
