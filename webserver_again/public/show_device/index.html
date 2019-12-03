@@ -65,20 +65,20 @@
 <body>
 
 <div id="app">
-  <div style="background: #FFEFBA;  /* fallback for old browsers */
-background: -webkit-linear-gradient(to right, #FFFFFF, #FFEFBA);  /* Chrome 10-25, Safari 5.1-6 */
-background: linear-gradient(to right, #FFFFFF, #FFEFBA); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
-">
-    <table>
+  <div style="background: #74ebd5;  /* fallback for old browsers */
+  background: -webkit-linear-gradient(to bottom, #ACB6E5, #74ebd5);  /* Chrome 10-25, Safari 5.1-6 */
+  background: linear-gradient(to bottom, #ACB6E5, #74ebd5); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+  ">
+    <table align="center">
       <tr>
         <td>
-          <button v-on:click="getPicture">截图</button>
+          <button @click="getPicture">截图</button>
           <br>
-          <button ref="start_record" v-on:click="onBtnStartRecord">开始录制</button>
+          <button ref="start_record" @click="onBtnStartRecord">开始录制</button>
           <br>
-          <button ref="play_record" v-on:click="onBtnPlayRecord">播放</button>
+          <button ref="play_record" @click="onBtnPlayRecord">播放</button>
           <br>
-          <button ref="download_record" v-on:click="onBtnDownloadRecord">下载</button>
+          <button ref="download_record" @click="onBtnDownloadRecord">下载</button>
           <br>
         </td>
         <td>
@@ -100,7 +100,7 @@ background: linear-gradient(to right, #FFFFFF, #FFEFBA); /* W3C, IE 10+/ Edge, F
 
           <div>
             <label>视频输入：
-              <select v-on:change="videoInputOnChange">
+              <select @change="videoInputOnChange">
                 <option v-for="i in video_input">{{i.label}}</option>
               </select>
             </label>
@@ -108,7 +108,7 @@ background: linear-gradient(to right, #FFFFFF, #FFEFBA); /* W3C, IE 10+/ Edge, F
 
           <div>
             <label>视频特效：
-              <select ref="filterSelector" v-on:change="filterOnChange">
+              <select ref="filterSelector" @change="filterOnChange">
                 <option v-for="i in filter">{{i.text}}</option>
               </select>
             </label>
@@ -126,6 +126,37 @@ background: linear-gradient(to right, #FFFFFF, #FFEFBA); /* W3C, IE 10+/ Edge, F
     </table>
 
     <hr/>
+  </div>
+
+  <div style="background: #C6FFDD;  /* fallback for old browsers */
+  background: -webkit-linear-gradient(to bottom, #f7797d, #FBD786, #C6FFDD);  /* Chrome 10-25, Safari 5.1-6 */
+  background: linear-gradient(to bottom, #f7797d, #FBD786, #C6FFDD); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+  ">
+    <table align="center">
+      <tr>
+        <td>
+          <h2>Local:</h2>
+          <video autoplay playsinline ref="localvideo"></video>
+          <h2>Offer SDP:</h2>
+          <textarea rows="20" cols="50" ref="offerSDP"></textarea>
+        </td>
+        <td>
+          <button ref="start_btn" @click="onStartBtnClick">开始</button>
+          <br>
+          <button ref="call_btn" @click="onCallBtnClick">呼叫</button>
+          <br>
+          <button ref="hangup_btn" @click="onHangupBtnClick">挂断</button>
+          <br>
+        </td>
+        <td>
+          <h2>Remote:</h2>
+          <video autoplay playsinline ref="remotevideo"></video>
+          <h2>Answer SDP:</h2>
+          <textarea rows="20" cols="50" ref="answerSDP"></textarea>
+        </td>
+      </tr>
+    </table>
+    <hr>
   </div>
 </div>
 
@@ -159,6 +190,10 @@ background: linear-gradient(to right, #FFFFFF, #FFEFBA); /* W3C, IE 10+/ Edge, F
       buffer: [],
       mediaRecorder: null,
       stream: null,
+
+      local_stream: null,
+      pc1: null,
+      pc2: null
     },
     created() {
       this.start();
@@ -209,6 +244,10 @@ background: linear-gradient(to right, #FFFFFF, #FFEFBA); /* W3C, IE 10+/ Edge, F
 
         // 视频录制用
         this.stream = stream;
+
+        // peer connection used
+        this.local_stream = stream;
+        this.$refs.localvideo.srcObject = stream;
 
         return navigator.mediaDevices.enumerateDevices();
       },
@@ -318,6 +357,53 @@ background: linear-gradient(to right, #FFFFFF, #FFEFBA); /* W3C, IE 10+/ Edge, F
         a.click();
       },
 
+      onStartBtnClick() {
+        alert('已经开始，点击呼叫吧！');
+      },
+      onCallBtnClick() {
+        this.pc1 = new RTCPeerConnection();  /* 本机传输，不传参数*/
+        this.pc2 = new RTCPeerConnection();  /* 同上 */
+
+        this.pc1.onicecandidate = (e) => {
+          this.pc2.addIceCandidate(e.candidate);
+        };
+        this.pc2.onicecandidate = (e) => {
+          this.pc1.addIceCandidate(e.candidate);
+        };
+
+        this.pc2.ontrack = (e) => {
+          this.$refs.remotevideo.srcObject = e.streams[0];
+        };
+
+        this.local_stream.getTracks().forEach((track)=>{
+          this.pc1.addTrack(track, this.local_stream);
+        });
+
+        var offer_options = {
+          offerToReceiveVideo: 1,
+          offerToReceiveAudio: 0,
+        };
+        this.pc1.createOffer(offer_options)
+            .then((desc)=>{
+              this.pc1.setLocalDescription(desc);
+              this.$refs.offerSDP.value = desc.sdp;
+              this.pc2.setRemoteDescription(desc);
+              this.pc2.createAnswer()
+                  .then((desc)=>{
+                    this.pc2.setLocalDescription(desc);
+                    this.$refs.answerSDP.value = desc.sdp;
+                    this.pc1.setRemoteDescription(desc);
+                  })
+                  .catch(this.handleErr)
+            })
+            .catch(this.handleErr)
+      },
+      onHangupBtnClick() {
+        this.pc1.close();
+        this.pc2.close();
+        this.pc1 = null;
+        this.pc2 = null;
+      }
     }
   });
 </script>
