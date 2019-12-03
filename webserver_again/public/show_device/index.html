@@ -72,6 +72,41 @@
     <table align="center">
       <tr>
         <td>
+          <video autoplay playsinline id="player" ref="player"></video>
+        </td>
+        <td>
+          <div>
+            <label>音频输入：<br>
+              <select>
+                <option v-for="i in audio_input">{{i.label}}</option>
+              </select>
+            </label>
+          </div>
+
+          <div>
+            <label>音频输出：<br>
+              <select>
+                <option v-for="i in audio_output">{{i.label}}</option>
+              </select>
+            </label>
+          </div>
+
+          <div>
+            <label>视频输入：<br>
+              <select @change="videoInputOnChange">
+                <option v-for="i in video_input">{{i.label}}</option>
+              </select>
+            </label>
+          </div>
+
+          <div>
+            <label>视频特效：<br>
+              <select ref="filterSelector" @change="filterOnChange">
+                <option v-for="i in filter">{{i.text}}</option>
+              </select>
+            </label>
+          </div>
+
           <button @click="getPicture">截图</button>
           <br>
           <button ref="start_record" @click="onBtnStartRecord">开始录制</button>
@@ -80,40 +115,6 @@
           <br>
           <button ref="download_record" @click="onBtnDownloadRecord">下载</button>
           <br>
-        </td>
-        <td>
-          <div>
-            <label>音频输入：
-              <select>
-                <option v-for="i in audio_input">{{i.label}}</option>
-              </select>
-            </label>
-          </div>
-
-          <div>
-            <label>音频输出：
-              <select>
-                <option v-for="i in audio_output">{{i.label}}</option>
-              </select>
-            </label>
-          </div>
-
-          <div>
-            <label>视频输入：
-              <select @change="videoInputOnChange">
-                <option v-for="i in video_input">{{i.label}}</option>
-              </select>
-            </label>
-          </div>
-
-          <div>
-            <label>视频特效：
-              <select ref="filterSelector" @change="filterOnChange">
-                <option v-for="i in filter">{{i.text}}</option>
-              </select>
-            </label>
-          </div>
-          <video autoplay playsinline id="player" ref="player"></video>
         </td>
 
         <td>
@@ -295,6 +296,7 @@
 
       // 开始录制
       startRecord() {
+        this.buffer = [];
         let options = {mimeType: 'video/webm;codecs=vp8'};
         try {
           if (!MediaRecorder.isTypeSupported(options.mimeType)) {
@@ -357,6 +359,7 @@
         a.click();
       },
 
+      /* peer connection used */
       onStartBtnClick() {
         alert('已经开始，点击呼叫吧！');
       },
