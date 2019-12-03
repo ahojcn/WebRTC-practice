@@ -65,6 +65,28 @@
 <body>
 
 <div id="app">
+  <div style="background: #FFEFBA;  /* fallback for old browsers */
+  background: -webkit-linear-gradient(to bottom, #FFFFFF, #FFEFBA);  /* Chrome 10-25, Safari 5.1-6 */
+  background: linear-gradient(to bottom, #FFFFFF, #FFEFBA); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+  ">
+    <table align="center">
+      <tr>
+        <td>
+          <h2>Chrome 测试功能，捕获屏幕数据:</h2>
+          <button ref="start_display_btn" @click="onStartDisplayBtnClick">捕获</button>
+          <button ref="share_display_btn" @click="onShareDisplayBtnClick">分享</button>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <video autoplay playsinline ref="video_display"></video>
+          <video autoplay playsinline ref="share_display"></video>
+        </td>
+      </tr>
+    </table>
+    <hr>
+  </div>
+
   <div style="background: #74ebd5;  /* fallback for old browsers */
   background: -webkit-linear-gradient(to bottom, #ACB6E5, #74ebd5);  /* Chrome 10-25, Safari 5.1-6 */
   background: linear-gradient(to bottom, #ACB6E5, #74ebd5); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
@@ -125,7 +147,6 @@
         </td>
       </tr>
     </table>
-
     <hr/>
   </div>
 
@@ -194,7 +215,10 @@
 
       local_stream: null,
       pc1: null,
-      pc2: null
+      pc2: null,
+
+      // 屏幕分享用
+      display_stream: null,
     },
     created() {
       this.start();
@@ -378,7 +402,7 @@
           this.$refs.remotevideo.srcObject = e.streams[0];
         };
 
-        this.local_stream.getTracks().forEach((track)=>{
+        this.local_stream.getTracks().forEach((track) => {
           this.pc1.addTrack(track, this.local_stream);
         });
 
@@ -387,12 +411,12 @@
           offerToReceiveAudio: 0,
         };
         this.pc1.createOffer(offer_options)
-            .then((desc)=>{
+            .then((desc) => {
               this.pc1.setLocalDescription(desc);
               this.$refs.offerSDP.value = desc.sdp;
               this.pc2.setRemoteDescription(desc);
               this.pc2.createAnswer()
-                  .then((desc)=>{
+                  .then((desc) => {
                     this.pc2.setLocalDescription(desc);
                     this.$refs.answerSDP.value = desc.sdp;
                     this.pc1.setRemoteDescription(desc);
@@ -406,7 +430,24 @@
         this.pc2.close();
         this.pc1 = null;
         this.pc2 = null;
-      }
+      },
+
+      /* 屏幕相关 */
+      onStartDisplayBtnClick() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+          alert('不支持捕获屏幕数据，请使用 Chrome 浏览器，并打开 chrome://flags/#enable-experimental-web-platform-features');
+          return;
+        }
+        navigator.mediaDevices.getDisplayMedia(this.constants)
+            .then((stream) => {
+              this.$refs.video_display.srcObject = stream;
+              this.display_stream = stream;
+            })
+            .catch(this.handleErr);
+      },
+      onShareDisplayBtnClick() {
+        this.$refs.share_display.srcObject = this.display_stream;
+      },
     }
   });
 </script>
