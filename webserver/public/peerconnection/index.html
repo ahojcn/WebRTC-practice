@@ -6,6 +6,7 @@
   <style>
     button {
       font-size: 25px;
+      width: 100px;
     }
   </style>
 </head>
@@ -17,19 +18,19 @@
     <tr>
       <td>
         <div>
-          <button id="start">start</button>
-          <button id="call">call</button>
-          <button id="hangup">挂断</button>
-        </div>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <div>
           <h2>local:</h2>
           <video autoplay id="localvideo" playsinline></video>
           <h2>offer SDP:</h2>
           <textarea rows="20" cols="50" id="offer"></textarea>
+        </div>
+      </td>
+      <td>
+        <div>
+          <button id="start">start</button>
+          <br>
+          <button id="call">call</button>
+          <br>
+          <button id="hangup">挂断</button>
         </div>
       </td>
       <td>

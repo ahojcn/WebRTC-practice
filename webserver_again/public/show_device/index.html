@@ -2,13 +2,22 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>显示获取音视频设备</title>
+  <title>Test</title>
   <script src="https://cdn.bootcss.com/webrtc-adapter/zv4.1.1/adapter.js"></script>
   <script src="https://cdn.bootcss.com/vue/2.6.10/vue.min.js"></script>
 
   <style>
     button {
       font-size: 25px;
+      width: 150px;
+    }
+
+    label {
+      font-size: 25px;
+    }
+
+    select {
+      font-size: 20px;
     }
 
     .none { /* 无 */
@@ -50,89 +59,73 @@
     .hue-rotate { /* 色相反转 */
       -webkit-filter: hue-rotate(3.142rad);
     }
-
-    .com-sel {
-      line-height: 5rem;
-      cursor: pointer; /*鼠标上移变成小手*/
-    }
-
-    .com-opt {
-      padding-right: 1.8rem;
-      color: #afbac0;
-      font-size: 1.6rem;
-      border: none;
-      outline: none;
-      /*去掉默认的下拉三角*/
-      appearance: none;
-      -moz-appearance: none;
-      -webkit-appearance: none;
-      /*添加下拉三角图标*/
-      background: url("https://i.loli.net/2019/11/30/qdfPh6O7HXKTSuZ.png") no-repeat right center transparent;
-    }
-
-    .label-font-size {
-      font-size: 25px;
-    }
   </style>
+
 </head>
 <body>
 
 <div id="app">
-  <div class="com-sel">
-    <label class="label-font-size">音频输入：
-      <select class="com-opt">
-        <option v-for="i in audio_input">{{i.label}}</option>
-      </select>
-    </label>
-  </div>
-
-  <div class="com-sel">
-    <label class="label-font-size">音频输出：
-      <select class="com-opt">
-        <option v-for="i in audio_output">{{i.label}}</option>
-      </select>
-    </label>
-  </div>
-
-  <div class="com-sel">
-    <label class="label-font-size">视频输入：
-      <select class="com-opt" v-on:change="videoInputOnChange">
-        <option v-for="i in video_input">{{i.label}}</option>
-      </select>
-    </label>
-  </div>
-
-  <div class="com-sel">
-    <label class="label-font-size">视频特效：
-      <select ref="filterSelector" class="com-opt" v-on:change="filterOnChange">
-        <option v-for="i in filter">{{i.text}}</option>
-      </select>
-    </label>
-  </div>
-
-  <div>
+  <div style="background: #FFEFBA;  /* fallback for old browsers */
+background: -webkit-linear-gradient(to right, #FFFFFF, #FFEFBA);  /* Chrome 10-25, Safari 5.1-6 */
+background: linear-gradient(to right, #FFFFFF, #FFEFBA); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+">
     <table>
       <tr>
         <td>
-          <button v-on:click="getPicture">
-            截取图片↓
-          </button>
-          <br/>
-          <canvas ref="picture"></canvas>
-          <img ref="img">
-        </td>
-        <td>
-          <div ref="constraints"></div>
-          <video autoplay playsinline id="player" ref="player"></video>
+          <button v-on:click="getPicture">截图</button>
           <br>
           <button ref="start_record" v-on:click="onBtnStartRecord">开始录制</button>
+          <br>
           <button ref="play_record" v-on:click="onBtnPlayRecord">播放</button>
+          <br>
           <button ref="download_record" v-on:click="onBtnDownloadRecord">下载</button>
           <br>
+        </td>
+        <td>
+          <div>
+            <label>音频输入：
+              <select>
+                <option v-for="i in audio_input">{{i.label}}</option>
+              </select>
+            </label>
+          </div>
+
+          <div>
+            <label>音频输出：
+              <select>
+                <option v-for="i in audio_output">{{i.label}}</option>
+              </select>
+            </label>
+          </div>
+
+          <div>
+            <label>视频输入：
+              <select v-on:change="videoInputOnChange">
+                <option v-for="i in video_input">{{i.label}}</option>
+              </select>
+            </label>
+          </div>
+
+          <div>
+            <label>视频特效：
+              <select ref="filterSelector" v-on:change="filterOnChange">
+                <option v-for="i in filter">{{i.text}}</option>
+              </select>
+            </label>
+          </div>
+          <video autoplay playsinline id="player" ref="player"></video>
+        </td>
+
+        <td>
+          <div ref="constraints" style="display: none"></div>
+          <canvas ref="picture"></canvas>
+          <img ref="img">
           <video playsinline ref="record_player"></video>
         </td>
       </tr>
     </table>
+
+    <hr/>
   </div>
 </div>
 
@@ -324,6 +317,7 @@
         a.download = 'aaa.webm';
         a.click();
       },
+
     }
   });
 </script>
