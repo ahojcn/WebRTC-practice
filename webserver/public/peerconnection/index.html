@@ -12,14 +12,37 @@
 <body>
 
 <div>
-  <video autoplay id="localvideo" playsinline></video>
-  <video autoplay id="remotevideo" playsinline></video>
 
-  <div>
-    <button id="start">start</button>
-    <button id="call">call</button>
-    <button id="hangup">挂断</button>
-  </div>
+  <table align="center">
+    <tr>
+      <td>
+        <div>
+          <button id="start">start</button>
+          <button id="call">call</button>
+          <button id="hangup">挂断</button>
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <div>
+          <h2>local:</h2>
+          <video autoplay id="localvideo" playsinline></video>
+          <h2>offer SDP:</h2>
+          <textarea rows="20" cols="50" id="offer"></textarea>
+        </div>
+      </td>
+      <td>
+        <div>
+          <h2>remote:</h2>
+          <video autoplay id="remotevideo" playsinline></video>
+          <h2>answer SDP</h2>
+          <textarea rows="20" cols="50" id="answer"></textarea>
+        </div>
+      </td>
+    </tr>
+  </table>
+
 </div>
 
 <script src="https://cdn.bootcss.com/webrtc-adapter/zv4.1.1/adapter.min.js"></script>
