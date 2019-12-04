@@ -1,0 +1,132 @@
+【会话层】
+v=0 （版本号）
+o=- 8050612574350436827 2 IN IP4 127.0.0.1
+s=-
+t=0 0  （起始时间，结束时间）
+#会话属性#
+a=group:BUNDLE 0  （一组媒体流绑定在一起）
+a=msid-semantic: WMS TvvoHdbajqUU3q1Rh8FZ4fU7SB6T5zm13Iyl  （msid->media stream id     WMS->WebRTC Media Stream id）
+
+【媒体信息】
+m=video（视频） 9（端口号，9表示不要给我这个端口发消息，有另外的网络提供） UDP/TLS/RTP/SAVPF（安全协议族） 96 97 98 99 100 101 102 122 127 121 125 107 108 109 124 120 123 119 114 115 116（这些数字含义在下面有解释）
+#媒体属性#
+c=IN IP4 0.0.0.0
+a=rtcp:9 IN IP4 0.0.0.0
+a=ice-ufrag:EZhd  （链路检查，账号）
+a=ice-pwd:1y5KIdcUPDwDwpfwP4jqAFq6  （链路检查，密码）
+a=ice-options:trickle  （trickle，表示setLocalDescription后才开始收集，这样的速度是比较快的）
+a=fingerprint:sha-256 47:FB:AE:C2:D9:64:32:4B:FF:3B:38:0A:C1:AB:1A:B3:ED:DD:E9:49:95:56:91:98:C4:20:DE:9E:4C:1B:AC:33  （fingerprint，指纹，交换证书）
+a=setup:actpass  （actpass服务器端/客户端，由answer来选择 || pacive服务端 || active客户端 || enactive）
+a=mid:0  （媒体id，也是就是上面 group BUNDLE 0）
+a=extmap:14 urn:ietf:params:rtp-hdrext:toffset  （扩展，增加了一个扩展头）
+a=extmap:2 http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time
+a=extmap:13 urn:3gpp:video-orientation
+a=extmap:3 http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01
+a=extmap:12 http://www.webrtc.org/experiments/rtp-hdrext/playout-delay
+a=extmap:11 http://www.webrtc.org/experiments/rtp-hdrext/video-content-type
+a=extmap:7 http://www.webrtc.org/experiments/rtp-hdrext/video-timing
+a=extmap:8 http://tools.ietf.org/html/draft-ietf-avtext-framemarking-07
+a=extmap:9 http://www.webrtc.org/experiments/rtp-hdrext/color-space
+a=extmap:4 urn:ietf:params:rtp-hdrext:sdes:mid
+a=extmap:5 urn:ietf:params:rtp-hdrext:sdes:rtp-stream-id
+a=extmap:6 urn:ietf:params:rtp-hdrext:sdes:repaired-rtp-stream-id
+a=sendrecv  （send and recieve || send || recive）
+a=msid:TvvoHdbajqUU3q1Rh8FZ4fU7SB6T5zm13Iyl  （与WMS相同） d0b43732-d0fd-4ea6-ac4e-940a1dfdaded
+#网络反馈#
+a=rtcp-mux  （多路复用）
+a=rtcp-rsize  （rtcp消息能不能减少）
+a=rtpmap:96 VP8/90000  （对上面的媒体信息后的数字进行说明）
+a=rtcp-fb:96 goog-remb  （接收端带宽评估）
+a=rtcp-fb:96 transport-cc  （传输断带宽评估）
+a=rtcp-fb:96 ccm fir
+a=rtcp-fb:96 nack  （发送包无应答，相应处理）
+a=rtcp-fb:96 nack pli  （代表 picture lose）
+a=rtpmap:97 rtx/90000  （重传）
+a=fmtp:97 apt=96   （97是96的关联通道，当96丢失数据表，重传的通道是97）
+a=rtpmap:98 VP9/90000
+a=rtcp-fb:98 goog-remb
+a=rtcp-fb:98 transport-cc
+a=rtcp-fb:98 ccm fir
+a=rtcp-fb:98 nack
+a=rtcp-fb:98 nack pli
+a=fmtp:98 profile-id=0
+a=rtpmap:99 rtx/90000
+a=fmtp:99 apt=98
+a=rtpmap:100 VP9/90000
+a=rtcp-fb:100 goog-remb
+a=rtcp-fb:100 transport-cc
+a=rtcp-fb:100 ccm fir
+a=rtcp-fb:100 nack
+a=rtcp-fb:100 nack pli
+a=fmtp:100 profile-id=2
+a=rtpmap:101 rtx/90000
+a=fmtp:101 apt=100
+a=rtpmap:102 H264/90000
+a=rtcp-fb:102 goog-remb
+a=rtcp-fb:102 transport-cc
+a=rtcp-fb:102 ccm fir
+a=rtcp-fb:102 nack
+a=rtcp-fb:102 nack pli
+a=fmtp:102 level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42001f
+a=rtpmap:122 rtx/90000
+a=fmtp:122 apt=102
+a=rtpmap:127 H264/90000
+a=rtcp-fb:127 goog-remb
+a=rtcp-fb:127 transport-cc
+a=rtcp-fb:127 ccm fir
+a=rtcp-fb:127 nack
+a=rtcp-fb:127 nack pli
+a=fmtp:127 level-asymmetry-allowed=1;packetization-mode=0;profile-level-id=42001f
+a=rtpmap:121 rtx/90000
+a=fmtp:121 apt=127
+a=rtpmap:125 H264/90000
+a=rtcp-fb:125 goog-remb
+a=rtcp-fb:125 transport-cc
+a=rtcp-fb:125 ccm fir
+a=rtcp-fb:125 nack
+a=rtcp-fb:125 nack pli
+a=fmtp:125 level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e01f
+a=rtpmap:107 rtx/90000
+a=fmtp:107 apt=125
+a=rtpmap:108 H264/90000
+a=rtcp-fb:108 goog-remb
+a=rtcp-fb:108 transport-cc
+a=rtcp-fb:108 ccm fir
+a=rtcp-fb:108 nack
+a=rtcp-fb:108 nack pli
+a=fmtp:108 level-asymmetry-allowed=1;packetization-mode=0;profile-level-id=42e01f
+a=rtpmap:109 rtx/90000
+a=fmtp:109 apt=108
+a=rtpmap:124 H264/90000
+a=rtcp-fb:124 goog-remb
+a=rtcp-fb:124 transport-cc
+a=rtcp-fb:124 ccm fir
+a=rtcp-fb:124 nack
+a=rtcp-fb:124 nack pli
+a=fmtp:124 level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=4d0032
+a=rtpmap:120 rtx/90000
+a=fmtp:120 apt=124
+a=rtpmap:123 H264/90000
+a=rtcp-fb:123 goog-remb
+a=rtcp-fb:123 transport-cc
+a=rtcp-fb:123 ccm fir
+a=rtcp-fb:123 nack
+a=rtcp-fb:123 nack pli
+a=fmtp:123 level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=640032
+a=rtpmap:119 rtx/90000
+a=fmtp:119 apt=123
+a=rtpmap:114 red/90000
+a=rtpmap:115 rtx/90000
+a=fmtp:115 apt=114
+a=rtpmap:116 ulpfec/90000  （ulpfec，带宽允许，发冗余包）
+
+#ssrc 表示一路流，每一个编码都有一路流#
+a=ssrc-group:FID 461242009 1459853958
+a=ssrc:461242009 cname:DH56aGAh/2b0Pc8K
+a=ssrc:461242009 msid:TvvoHdbajqUU3q1Rh8FZ4fU7SB6T5zm13Iyl d0b43732-d0fd-4ea6-ac4e-940a1dfdaded
+a=ssrc:461242009 mslabel:TvvoHdbajqUU3q1Rh8FZ4fU7SB6T5zm13Iyl
+a=ssrc:461242009 label:d0b43732-d0fd-4ea6-ac4e-940a1dfdaded
+a=ssrc:1459853958 cname:DH56aGAh/2b0Pc8K
+a=ssrc:1459853958 msid:TvvoHdbajqUU3q1Rh8FZ4fU7SB6T5zm13Iyl d0b43732-d0fd-4ea6-ac4e-940a1dfdaded
+a=ssrc:1459853958 mslabel:TvvoHdbajqUU3q1Rh8FZ4fU7SB6T5zm13Iyl
+a=ssrc:1459853958 label:d0b43732-d0fd-4ea6-ac4e-940a1dfdaded

@@ -28,28 +28,44 @@ var https_server = https.createServer(options, app);
 
 var io = socketIo.listen(https_server);
 io.sockets.on('connection', (socket) => {
-  socket.on('message', (room, data)=>{
-    io.in(room).emit('message',room, data);
+  socket.on('message', (room, data) => {
+    io.in(room).emit('message', room, data);
   });
 
   socket.on('join', (room) => {
     socket.join(room);
     var myRoom = io.sockets.adapter.rooms[room];
     var users = Object.keys(myRoom.sockets).length;
+    console.log('join 1 user, room: ' + room + ' total: ' + users);
+
+    if (users <= 2) {
+      socket.emit('joined', room, socket.id);  // 发消息给房间里除自己之外的所有人
+      if (users > 1) {
+        socket.to(room).emit('otherjoin', room, socket.id);
+      }
+    } else {
+      socket.leave(room);
+      socket.emit('full', room, socket.id);
+    }
+
+    // io.in(room).emit('joined', room, socket.id);  // 给房间所有人发消息
     // socket.emit('joined', room, socket.id);  // 给本人回消息
     // socket.to(room).emit('joined', room, socket.id);  // 给房间出自己外所有人回消息
-    // io.in(room).emit('joined', room, socket.id);  // 给房间所有人发消息
-    socket.broadcast.emit('joined', room, socket.id);  // 给站点所有人发消息，除了自己
+    // socket.broadcast.emit('joined', room, socket.id);  // 给站点所有人发消息，除了自己
   });
 
   socket.on('leave', (room) => {
+
+    console.log(room);
     var myRoom = io.sockets.adapter.rooms[room];
     var users = Object.keys(myRoom.sockets).length;
-    socket.leave(room, ()=>{});
+    socket.to(room).emit('bye', room, socket.id);
+    socket.emit('leaved', room, socket.id);
+
     // socket.emit('joined', room, socket.id);  // 给本人回消息
     // socket.to(room).emit('joined', room, socket.id);  // 给房间出自己外所有人回消息
-    // io.in(room).emit('joined', room, socket.id);  // 给房间所有人发消息
-    socket.broadcast.emit('leave', room, socket.id);  // 给站点所有人发消息，除了自己
+    // socket.broadcast.emit('leave', room, socket.id);  // 给站点所有人发消息，除了自己
+    //io.in(room).emit('leaved', room, socket.id);  // 给房间所有人发消息
   });
 });
 https_server.listen(443, '0.0.0.0');

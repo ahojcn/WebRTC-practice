@@ -104,6 +104,7 @@ function getAnswer(desc) {
 
 
 function getRemoteStream(e) {
+  remoteStream = e.streams[0];
   remoteVideo.srcObject = e.streams[0];
 }
 
