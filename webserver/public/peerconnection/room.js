@@ -15,6 +15,10 @@ var state = 'init';
 
 var pc = null;
 
+var textarea_offer = document.querySelector('textarea#textarea_offer');
+var textarea_answer = document.querySelector('textarea#textarea_answer');
+
+
 var pcConfig = {
   'iceServers': [{
     'urls': 'turn:ahoj.luoshaoqi.cn:3478',
@@ -124,6 +128,8 @@ function conn() {
 
     state = 'joined_unbind';
     closePeerConnection();
+    textarea_offer.value = '';
+    textarea_answer.value = '';
     console.log('receive msg: bye', roomid, id, 'state = ', state);
   });
 
@@ -141,6 +147,8 @@ function conn() {
     /* 媒体协商 */
     if (data) {
       if (data.type === 'offer') {
+        textarea_offer.value = data.sdp;
+
         pc.setRemoteDescription(new RTCSessionDescription(data));
 
         pc.createAnswer()
@@ -150,6 +158,7 @@ function conn() {
             });
 
       } else if (data.type === 'answer') {
+        textarea_answer.value = data.sdp;
         pc.setRemoteDescription(new RTCSessionDescription(data));
 
       } else if (data.type === 'candidate') {
@@ -194,6 +203,9 @@ function leave() {
   /* 释放资源 */
   closePeerConnection();
   closeLocalMedia();
+
+  textarea_offer.value = '';
+  textarea_answer.value = '';
 
   btnConn.disabled = false;
   btnLeave.disabled = true;
@@ -269,11 +281,13 @@ function call() {
 
 function getOffer(desc) {
   pc.setLocalDescription(desc);
+  textarea_offer.value = desc.sdp;
   sendMessage(roomid, desc);
 }
 
 function getAnswer(desc) {
   pc.setLocalDescription(desc);
+  textarea_answer.value = desc.sdp;
   sendMessage(roomid, desc);
 }
 
