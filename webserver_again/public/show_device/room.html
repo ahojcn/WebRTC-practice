@@ -17,19 +17,36 @@
       <tr>
         <td>
           <label>当前Room ID: {{room_id}} </label>
-          <button @click="inputRoomId">切换</button>
+          <button type="primary" @click="inputRoomId">切换</button>
         </td>
       </tr>
+
       <tr>
         <td>
           <video ref="local_video" playsinline autoplay></video>
         </td>
         <td>
-          <button ref="btn_conn" @click="connSignalServer">连接</button><br>
-          <button ref="btn_leave" @click="leave" disabled>离开</button>
+          <button type="success" ref="btn_conn" @click="connSignalServer">连接</button><br>
+          <button type="danger" ref="btn_leave" @click="leave" disabled>离开</button>
         </td>
         <td>
           <video ref="remote_video" playsinline autoplay></video>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          <label>
+            <input v-model="input_msg"></input>
+          </label>
+        </td>
+        <td>
+          <button type="primary" ref="btn_send_msg" @click="sendInputMsg">发送</button>
+        </td>
+        <td>
+          <label>
+            <textarea v-model="history_msg"></textarea>
+          </label>
         </td>
       </tr>
     </table>
@@ -41,7 +58,7 @@
   var app = new Vue({
     el: '#app',
     data: {
-      room_id: null,
+      room_id: 0,
       socket: null,
       pc: null,
       state: 'init',
@@ -60,11 +77,26 @@
         video: true,
         audio: true,
       },
+
+      input_msg: '',
+      history_msg: '',
     },
     created() {
-      this.inputRoomId();
+      // this.inputRoomId();
     },
     methods: {
+      /* 发送消息 */
+      sendInputMsg() {
+        if (this.socket === null || this.socket === undefined) {
+          alert('请先连接服务器');
+          return;
+        }
+        var data = this.input_msg;
+        data = new Date().toLocaleTimeString() + " : " + data;
+        this.socket.emit('message', this.room_id, data);
+        this.input_msg = '';
+      },
+
       /* 输入房间id */
       inputRoomId() {
         var tmp_id = prompt("输入房间ID：");
@@ -203,7 +235,8 @@
               this.pc.addIceCandidate(candidate);
 
             } else {
-              console.error('data type error', data);
+              // console.log('data type error', data);
+              this.history_msg = this.history_msg + data + '\n';
             }
           }
         });
@@ -313,8 +346,9 @@
         }
       },
     },
-  })
+  });
 
+  window.onunload = app.leave();
 </script>
 
 </body>
