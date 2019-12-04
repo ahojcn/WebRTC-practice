@@ -7,6 +7,8 @@ var fs = require('fs');
 var express = require('express');
 var serveIndex = require('serve-index');
 
+var socketIo = require('socket.io');
+
 
 let app = express();
 app.use(serveIndex('./public'));
@@ -22,4 +24,56 @@ var options = {
   cert: fs.readFileSync('./cret/3162249_ahoj.luoshaoqi.cn.pem')
 };
 var https_server = https.createServer(options, app);
+
+var io=socketIo.listen(https_server);
+io.sockets.on('connection', (socket) => {
+  socket.on('message', (room, data) => {
+    io.in(room).emit('message', room, data);
+
+    console.log('[message] room:', room, 'user_id:', socket.id);
+  });
+
+  socket.on('join', (room) => {
+    socket.join(room);
+    var myRoom = io.sockets.adapter.rooms[room];
+    var users = Object.keys(myRoom.sockets).length;
+
+    if (users <= 2) {
+      socket.emit('joined', room, socket.id);  // 发消息给房间里除自己之外的所有人
+
+      console.log('[joined] room:', room, 'user_id:', socket.id, ' user_cnt', users);
+
+      if (users > 1) {
+        socket.to(room).emit('otherjoin', room, socket.id);
+
+        console.log('[otherjoin] room:', room, 'user_id:', socket.id, ' user_cnt', users);
+      }
+    } else {
+      socket.leave(room);
+      socket.emit('full', room, socket.id);
+      console.log('[leave] room:', room, 'user_id:', socket.id, ' user_cnt', users);
+    }
+
+    // io.in(room).emit('joined', room, socket.id);  // 给房间所有人发消息
+    // socket.emit('joined', room, socket.id);  // 给本人回消息
+    // socket.to(room).emit('joined', room, socket.id);  // 给房间出自己外所有人回消息
+    // socket.broadcast.emit('joined', room, socket.id);  // 给站点所有人发消息，除了自己
+  });
+
+  socket.on('leave', (room) => {
+
+    console.log(room);
+    var myRoom = io.sockets.adapter.rooms[room];
+    // var users = Object.keys(myRoom.sockets).length;
+    socket.to(room).emit('bye', room, socket.id);
+    socket.emit('leaved', room, socket.id);
+
+    console.log('[leave] room:', room, 'user_id:', socket.id);
+
+    // socket.emit('joined', room, socket.id);  // 给本人回消息
+    // socket.to(room).emit('joined', room, socket.id);  // 给房间出自己外所有人回消息
+    // socket.broadcast.emit('leave', room, socket.id);  // 给站点所有人发消息，除了自己
+    //io.in(room).emit('leaved', room, socket.id);  // 给房间所有人发消息
+  });
+});
 https_server.listen(443, '0.0.0.0');

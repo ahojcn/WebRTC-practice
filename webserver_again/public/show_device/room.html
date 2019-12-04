@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ChatRoom</title>
+
+  <script src="https://cdn.bootcss.com/socket.io/2.3.0/socket.io.js"></script>
+  <script src="https://cdn.bootcss.com/webrtc-adapter/zv4.1.1/adapter.js"></script>
+  <script src="https://cdn.bootcss.com/vue/2.6.10/vue.min.js"></script>
+  <link href="main.css" rel="stylesheet">
+</head>
+<body>
+
+<div id="app">
+  <div>
+    <table align="center">
+      <tr>
+        <td>
+          <label>当前Room ID: {{room_id}} </label>
+          <button @click="inputRoomId">切换</button>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <video ref="local_video" playsinline autoplay></video>
+        </td>
+        <td>
+          <button ref="btn_conn" @click="connSignalServer">连接</button><br>
+          <button ref="btn_leave" @click="leave" disabled>离开</button>
+        </td>
+        <td>
+          <video ref="remote_video" playsinline autoplay></video>
+        </td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<script>
+
+  var app = new Vue({
+    el: '#app',
+    data: {
+      room_id: null,
+      socket: null,
+      pc: null,
+      state: 'init',
+      local_stream: null,
+      remote_stream: null,
+      offer_sdp: null,
+      answer_sdp: null,
+      pc_config: {
+        'iceServers': [{
+          'urls': 'turn:ahoj.luoshaoqi.cn:3478',
+          'credential': '123456',
+          'username': 'ahojcn'
+        }]
+      },
+      constraints: {
+        video: true,
+        audio: true,
+      },
+    },
+    created() {
+      this.inputRoomId();
+    },
+    methods: {
+      /* 输入房间id */
+      inputRoomId() {
+        var tmp_id = prompt("输入房间ID：");
+        if (tmp_id === null) {
+          alert('来了还想走？不行，输入一个');
+          this.inputRoomId();
+        }
+        if (tmp_id !== undefined && tmp_id !== '') {
+          this.room_id = tmp_id;
+        } else {
+          alert('这个不行');
+          this.inputRoomId();
+        }
+      },
+
+      /* 连接信号服务器入口 */
+      connSignalServer() {
+        this.start();
+      },
+
+      /* leave */
+      leave() {
+        if (this.socket) {
+          this.socket.emit('leave', this.room_id);
+        }
+
+        // 释放资源
+        this.closePeerConnection();
+        this.closeLocalMedia();
+        this.offer_sdp = '';
+        this.answer_sdp = '';
+        this.$refs.btn_conn.disabled = false;
+        this.$refs.btn_leave.disabled = true;
+      },
+
+      /* 开启本地音视频设备 */
+      start() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          alert('当前浏览器不支持捕获音视频设备');
+          return;
+        }
+        navigator.mediaDevices.getUserMedia(this.constraints)
+            .then(this.getMediaStream)
+            .catch(e => {
+              console.error(e);
+            });
+      },
+
+      /* 获取音视频媒体 */
+      getMediaStream(stream) {
+        if (this.local_stream) {
+          stream.getAudioTracks().forEach(track => {
+            this.local_stream.addTrack(track);
+            stream.removeTrack();
+          });
+        } else {
+          this.local_stream = stream;
+        }
+
+        this.$refs.local_video.srcObject = this.local_stream;
+
+        this.conn();
+      },
+
+      /* 连接信令服务器 */
+      conn() {
+        this.socket = io.connect();
+
+        this.socket.on('joined', (roomid, id) => {
+          this.state = 'joined';
+          this.createPeerConnection();
+          this.$refs.btn_conn.disabled = true;
+          this.$refs.btn_leave.disabled = false;
+        });
+
+        this.socket.on('otherjoin', (roomid, id) => {
+          if (this.state === 'joined_unbind') {
+            this.createPeerConnection();
+          }
+
+          this.state = 'joined_conn';
+          this.call();
+        });
+
+        this.socket.on('full', (roomid, id) => {
+          this.state = 'leaved';
+          this.socket.disconnect();
+          this.closeLocalMedia();
+          alert('房间已满!');
+          this.$refs.btn_conn.disabled = false;
+          this.$refs.btn_leave.disabled = true;
+        });
+
+        this.socket.on('leaved', (roomid, id) => {
+          this.state = 'leaved';
+          this.socket.disconnect();
+          this.$refs.btn_conn.disabled = false;
+          this.$refs.btn_leave.disabled = true;
+        });
+
+        this.socket.on('bye', (roomid, id) => {
+          this.state = 'joined_unbind';
+          this.closePeerConnection();
+          this.offer_sdp = '';
+          this.answer_sdp = '';
+        });
+
+        this.socket.on('disconnect', socket => {
+          if (!(this.state === 'leaved')) {
+            this.hangup();
+            this.closeLocalMedia();
+          }
+          this.state = 'leaved';
+        });
+
+        this.socket.on('message', (roomid, data) => {
+          if (data) {
+            if (data.type === 'offer') {
+              this.offer_sdp = data.sdp;
+              this.pc.setRemoteDescription(new RTCSessionDescription(data));
+              this.pc.createAnswer()
+                  .then(this.getAnswer)
+                  .catch(e => {
+                    console.error(e)
+                  });
+
+            } else if (data.type === 'answer') {
+              this.answer_sdp = data.sdp;
+              this.pc.setRemoteDescription(new RTCSessionDescription(data));
+
+            } else if (data.type === 'candidate') {
+              var candidate = new RTCIceCandidate({
+                sdpMLineIndex: data.label,
+                candidate: data.candidate
+              });
+              this.pc.addIceCandidate(candidate);
+
+            } else {
+              console.error('data type error', data);
+            }
+          }
+        });
+
+        this.socket.emit('join', this.room_id);
+      },
+
+      getAnswer(desc) {
+        this.pc.setLocalDescription(desc);
+        this.answer_sdp = desc.sdp;
+        this.sendMessage(this.room_id, desc);
+      },
+
+      /* 创建 peer connection */
+      createPeerConnection() {
+        if (!this.pc) {
+          this.pc = new RTCPeerConnection(this.pc_config);
+          this.pc.onicecandidate = e => {
+
+            if (e.candidate) {
+              this.sendMessage(this.room_id, {
+                type: 'candidate',
+                label: e.candidate.sdpMLineIndex,
+                id: e.candidate.sdpMid,
+                candidate: e.candidate.candidate
+              });
+
+            } else {
+              console.log('this is the end candidate');
+            }
+
+          };
+
+          this.pc.ontrack = this.getRemoteStream;
+
+        } else {
+          console.log('the pc had be created')
+        }
+
+        if (this.local_stream !== null || this.local_stream !== undefined) {
+          this.local_stream.getTracks().forEach(track => {
+            this.pc.addTrack(track, this.local_stream);
+          })
+        } else {
+          console.log('pc or local_stream is null or undefined')
+        }
+
+      },
+
+      getRemoteStream(e) {
+        this.remote_stream = e.streams[0];
+        this.$refs.remote_video.srcObject = e.streams[0];
+      },
+
+      /* 关闭 peer connection */
+      closePeerConnection() {
+        if (this.pc) {
+          this.pc.close();
+          this.pc = null;
+        }
+      },
+
+      /* 端对端连接，创建 offer sdp */
+      call() {
+        if (this.state === 'joined_conn') {
+
+          var options = {
+            offerToReceiveAudio: 1,
+            offerToReceiveVideo: 1
+          };
+          this.pc.createOffer(options)
+              .then(this.getOffer)
+              .catch(e => {
+                console.error(e)
+              });
+
+        }
+      },
+
+      getOffer(desc) {
+        this.pc.setLocalDescription(desc);
+        this.offer_sdp = desc.sdp;
+        this.sendMessage(this.room_id, desc);
+      },
+
+      /* 退出时，关闭本地 track 流 */
+      closeLocalMedia() {
+        if (this.local_stream && this.local_stream.getTracks()) {
+          this.local_stream.getTracks().forEach(track => {
+            track.stop();
+          });
+        }
+        this.local_stream = null;
+      },
+
+      hangup() {
+        if (this.pc) {
+          this.pc.close();
+          this.pc = null;
+        }
+      },
+
+      /* 媒体协商 sendMessage */
+      sendMessage(room_id, data) {
+        if (this.socket) {
+          this.socket.emit('message', room_id, data);
+        }
+      },
+    },
+  })
+
+</script>
+
+</body>
+</html>

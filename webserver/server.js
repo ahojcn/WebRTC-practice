@@ -30,22 +30,29 @@ var io = socketIo.listen(https_server);
 io.sockets.on('connection', (socket) => {
   socket.on('message', (room, data) => {
     io.in(room).emit('message', room, data);
+
+    console.log('[message] room:', room, 'data:', data);
   });
 
   socket.on('join', (room) => {
     socket.join(room);
     var myRoom = io.sockets.adapter.rooms[room];
     var users = Object.keys(myRoom.sockets).length;
-    console.log('join 1 user, room: ' + room + ' total: ' + users);
 
     if (users <= 2) {
       socket.emit('joined', room, socket.id);  // 发消息给房间里除自己之外的所有人
+
+      console.log('[joined] room:', room, 'user_id:', socket.id);
+
       if (users > 1) {
         socket.to(room).emit('otherjoin', room, socket.id);
+
+        console.log('[otherjoin] room:', room, 'user_id:', socket.id);
       }
     } else {
       socket.leave(room);
       socket.emit('full', room, socket.id);
+      console.log('[otherjoin] room:', room, 'user_id:', socket.id);
     }
 
     // io.in(room).emit('joined', room, socket.id);  // 给房间所有人发消息
@@ -58,9 +65,11 @@ io.sockets.on('connection', (socket) => {
 
     console.log(room);
     var myRoom = io.sockets.adapter.rooms[room];
-    var users = Object.keys(myRoom.sockets).length;
+    // var users = Object.keys(myRoom.sockets).length;
     socket.to(room).emit('bye', room, socket.id);
     socket.emit('leaved', room, socket.id);
+
+    console.log('[otherjoin] room:', room, 'user_id:', socket.id);
 
     // socket.emit('joined', room, socket.id);  // 给本人回消息
     // socket.to(room).emit('joined', room, socket.id);  // 给房间出自己外所有人回消息
