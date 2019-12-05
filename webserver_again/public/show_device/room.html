@@ -44,7 +44,7 @@
       <tr>
         <td>
           <label>
-            <input v-model="input_msg"></input>
+            <input v-model="input_msg" @keyup.enter="sendInputMsg"></input>
           </label>
         </td>
         <td>
@@ -113,6 +113,8 @@
         }
         if (tmp_id !== undefined && tmp_id !== '') {
           this.room_id = tmp_id;
+          this.leave();
+          this.connSignalServer();
         } else {
           alert('这个不行');
           this.inputRoomId();
