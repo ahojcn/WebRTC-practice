@@ -18,6 +18,27 @@ var pc = null;
 var textarea_offer = document.querySelector('textarea#textarea_offer');
 var textarea_answer = document.querySelector('textarea#textarea_answer');
 
+var optbw = document.querySelector('select#bandwidth');
+
+var chat = document.querySelector('textarea#chat');
+var sendtxt = document.querySelector('textarea#sendtxt');
+var btnSend = document.querySelector('button#send');
+
+var dc;
+
+
+btnSend.onclick = sendText;
+
+function sendText() {
+  var data = sendtxt.value;
+  if (data) {
+    dc.send(data);
+  }
+
+  sendtxt.value = '';
+  chat.value += '<-' + data + '\r\n';
+}
+
 
 var pcConfig = {
   'iceServers': [{
@@ -30,6 +51,83 @@ var pcConfig = {
 
 btnConn.onclick = connSignalServer;
 btnLeave.onclick = leave;
+optbw.onchange = change_bw;
+
+var bitrateGraph;
+var bitrateSeries;
+var packetGraph;
+var packetSeries;
+
+var lastResult;
+
+window.setInterval(() => {
+  var sender = pc.getSenders()[0];
+  if (!sender) {
+    return;
+  }
+  sender.getStats()
+      .then(reports => {
+        reports.forEach(report => {
+          if (report.type === 'outbound-rtp') {
+            if (report.isRemote) {
+              return;
+            }
+
+            var curTs = report.timestamp;
+            var bytes = report.bytesSent;
+            var packets = report.packetsSent;
+            if (lastResult && lastResult.has(report.id)) {
+              var bitrate = 8 * (bytes - lastResult.get(report.id).bytesSent) / (curTs - lastResult.get(report.id).timestamp);
+              bitrateSeries.addPoint(curTs, bitrate);
+              bitrateGraph.setDataSeries([bitrateSeries]);
+              bitrateGraph.updateEndDate();
+
+              packetSeries.addPoint(curTs, packets - lastResult.get(report.id).packetsSent);
+              packetGraph.setDataSeries([packetSeries]);
+              packetGraph.updateEndDate();
+            }
+          }
+        });
+
+        lastResult = reports;
+      })
+      .catch(err => {
+        console.log(err)
+      });
+}, 1000);
+
+
+function change_bw() {
+  optbw.disabled = true;
+  var bw = optbw.options[optbw.selectedIndex].value;
+  var vsender = null;
+  var senders = pc.getSenders();
+
+  senders.forEach(sender => {
+    if (sender && sender.track.kind === 'video') {
+      vsender = sender;
+    }
+  });
+
+  var paramters = vsender.getParameters();
+  if (!paramters.encodings) {
+    return;
+  }
+  if (bw === 'unlimited') {
+    return;
+  }
+  paramters.encodings[0].maxBitrate = bw * 1000;
+
+  vsender.setParameters(paramters)
+      .then(() => {
+        optbw.disabled = false;
+        console.log('success to set paramters')
+      })
+      .catch(err => {
+        console.error(err)
+      });
+}
+
 
 function connSignalServer() {
   // 开启本地音视频设备
@@ -44,7 +142,7 @@ function start() {
   } else {
     var constraints = {
       video: true,
-      audio: true
+      audio: false
     };
     navigator.mediaDevices.getUserMedia(constraints)
         .then(getMediaStream)
@@ -67,6 +165,35 @@ function getMediaStream(stream) {
   localVideo.srcObject = localStream;
 
   conn();
+
+
+  // 绘图
+  bitrateSeries = new TimelineDataSeries();
+  bitrateGraph = new TimelineGraphView('bitrateGraph', 'bitrateCanvas');
+  bitrateGraph.updateEndDate();
+  packetSeries = new TimelineDataSeries();
+  packetGraph = new TimelineGraphView('packetGraph', 'packetCanvas');
+  packetGraph.updateEndDate();
+}
+
+function receivemsg(e) {
+  var msg = e.data;
+  if (msg) {
+    chat.value += '->' + msg + '\r\n';
+  } else {
+    console.error('received msg is null');
+  }
+}
+
+function dataChannelStateChange() {
+  var readyState = dc.readyState;
+  if (readyState === 'open') {
+    sendtxt.disabled = false;
+    btnSend.disabled = false;
+  } else {
+    sendtxt.disabled = true;
+    btnSend.disabled = true;
+  }
 }
 
 /* 信令部分 */
@@ -90,6 +217,12 @@ function conn() {
     if (state === 'joined_unbind') {
       createPeerConnection();
     }
+
+    // 创建 dataChannel
+    dc = pc.createDataChannel('chat');
+    dc.onmessage = receivemsg;
+    dc.onopen = dataChannelStateChange;
+    dc.onclose = dataChannelStateChange;
 
     state = 'joined_conn';
     console.log('receive msg: otherjoin', roomid, id, 'state = ', state);
@@ -159,6 +292,7 @@ function conn() {
 
       } else if (data.type === 'answer') {
         textarea_answer.value = data.sdp;
+        optbw.disabled = false;  ////////
         pc.setRemoteDescription(new RTCSessionDescription(data));
 
       } else if (data.type === 'candidate') {
@@ -219,7 +353,7 @@ function createPeerConnection() {
   if (!pc) {
     pc = new RTCPeerConnection(pcConfig);
 
-    pc.onicecandidate = (e) => {
+    pc.onicecandidate = e => {
 
       if (e.candidate) {
         sendMessage(roomid, {
@@ -232,6 +366,15 @@ function createPeerConnection() {
         console.log('this is the end candidate');
       }
 
+    };
+
+    pc.ondatachannel = e => {
+      if (!dc) {
+        dc = e.channel;
+        dc.onmessage = receivemsg;
+        dc.onopen = dataChannelStateChange;
+        dc.onclose = dataChannelStateChange;
+      }
     };
 
     pc.ontrack = getRemoteStream;
@@ -268,7 +411,7 @@ function call() {
 
     var options = {
       offerToReceiveVideo: 1,
-      offerToReceiveAudio: 1,
+      offerToReceiveAudio: 0,
     };
     pc.createOffer(options)
         .then(getOffer)
@@ -288,6 +431,8 @@ function getOffer(desc) {
 function getAnswer(desc) {
   pc.setLocalDescription(desc);
   textarea_answer.value = desc.sdp;
+
+  optbw.disabled = false;
   sendMessage(roomid, desc);
 }
 

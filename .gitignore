@@ -81,6 +81,8 @@ typings/
 # nuxt.js build output
 .nuxt
 
+*.mp3
+
 # react / gatsby
 
 # vuepress build output

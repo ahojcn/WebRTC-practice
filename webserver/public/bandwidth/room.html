@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Room</title>
+  <link href="main.css" rel="stylesheet">
+</head>
+<body>
+<div>
+  <div id="preview">
+    <table align="center">
+      <tr>
+        <td>
+          <h2>Local:</h2>
+          <video id="localvideo" autoplay playsinline muted></video>
+
+          <label>Offer SDP:
+            <textarea id="textarea_offer"></textarea>
+          </label>
+        </td>
+        <td>
+          <button id="connserver">连接</button><br>
+          <button id="leave" disabled>离开</button>
+
+          <div>
+            <label>BandWidth
+              <select id="bandwidth" disabled>
+                <option value="unlimited" selected>unlimited</option>
+                <option value="2000">2000</option>
+                <option value="1000">1000</option>
+                <option value="500">500
+                <option value="250">250</option>
+                <option value="125">125</option>
+              </select>
+              kbps
+            </label>
+          </div>
+        </td>
+        <td>
+          <h2>Remote:</h2>
+          <video id="remotevideo" autoplay playsinline></video>
+
+          <label>Answer SDP:
+            <textarea id="textarea_answer"></textarea>
+          </label>
+        </td>
+      </tr>
+      <tr>
+        <td>
+
+          <div class="graph-container" id="bitrateGraph">
+            <div>Bitrate:</div>
+            <canvas id="bitrateCanvas"></canvas>
+          </div>
+          <div class="graph-container" id="packetGraph">
+            <div>Packets sent per second:</div>
+            <canvas id="packetCanvas"></canvas>
+          </div>
+        </td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<script src="https://cdn.bootcss.com/socket.io/2.3.0/socket.io.js"></script>
+<script src="https://cdn.bootcss.com/webrtc-adapter/zv4.1.1/adapter.min.js"></script>
+<script src="room.js"></script>
+<script src="graph.js"></script>
+</body>
+</html>

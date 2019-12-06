@@ -29,7 +29,7 @@ var https_server = https.createServer(options, app);
 var io = socketIo.listen(https_server);
 io.sockets.on('connection', (socket) => {
   socket.on('message', (room, data) => {
-    io.in(room).emit('message', room, data);
+    io.in(room).emit('message', room, data);  // socket.to(room).emit('message', room, data);
 
     console.log('[message] room:', room, 'data:', data);
   });
